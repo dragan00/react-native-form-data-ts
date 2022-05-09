@@ -30,6 +30,8 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
 
     // Variables
     const [loading, set_loading] = useState<boolean>(false)
+    const [active, setActive] = useState<boolean>(true)
+
     const [currentIndex, set_currentIndex] = useState<number>(route.params?.index)
     const [width, set_width] = useState<number>(Dimensions.get('screen').width)
     const [height, set_height] = useState<number>(Dimensions.get('screen').height)
@@ -41,28 +43,37 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
     let data: MediaFile[] = route.params?.files!
 
     useEffect(() => {
-        ref.current.snapToItem(route.params.index, { animated: true, fireCallback: true })
+        set_loading(true)
+        setTimeout(() => {
+            ref?.current.snapToItem(route.params.index, { animated: true, fireCallback: true })
+            set_currentIndex(route.params.index)
+            setTimeout(() => {
+                setActive(false)
+                set_loading(false)
+
+            }, 700)
+        }, 500)
     }, [])
-  
+
     useEffect(() => {
         Orientation.addOrientationListener(handleOrientation);
         Orientation.lockToPortrait()
         return () => {
-          Orientation.removeOrientationListener(handleOrientation);
-          Orientation.unlockAllOrientations()
+            Orientation.removeOrientationListener(handleOrientation);
+            Orientation.unlockAllOrientations()
         };
     }, []);
 
     useEffect(() => {
-        if(currentFile.type === 'image' || currentFile.type === 'document') Orientation.unlockAllOrientations()
-        return () =>  Orientation.lockToPortrait()
+        if (currentFile.type === 'image' || currentFile.type === 'document') Orientation.unlockAllOrientations()
+        return () => Orientation.lockToPortrait()
     }, [currentFile]);
-    
+
     function handleOrientation(orientation: string) {
         orientation === OrientationType["LANDSCAPE-LEFT"] || orientation === OrientationType["LANDSCAPE-RIGHT"]
-          ? (set_orientation('landscape'), set_width(Dimensions.get('screen').width), set_height(Dimensions.get('screen').height))
-          : (set_orientation('portrait'), set_width(Dimensions.get('screen').width), set_height(Dimensions.get('screen').height))
-      }
+            ? (set_orientation('landscape'), set_width(Dimensions.get('screen').width), set_height(Dimensions.get('screen').height))
+            : (set_orientation('portrait'), set_width(Dimensions.get('screen').width), set_height(Dimensions.get('screen').height))
+    }
 
     // Content
     const metaIcon = {
@@ -72,10 +83,10 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
         invalid: <Image source={require('../../../assets/icons/invalid.png')} style={styles.icon} />,
     }
 
-    const Item = ({item, index}: IRenderItem) => {
+    const Item = ({ item, index }: IRenderItem) => {
         return (
             <View
-                style={{ 
+                style={{
                     flex: 1,
                     display: 'flex',
                     alignItems: 'center',
@@ -84,72 +95,75 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
             >
                 {
                     item.type === 'image' ?
-                    <ImageZoom 
-                        cropWidth={Dimensions.get('window').width}
-                        cropHeight={Dimensions.get('window').height}
-                        imageWidth={width}
-                        imageHeight={height * .8}
-                    >
-                        <Image
-                            style={{ width: '100%', height: '80%', resizeMode: 'contain', flex: 1 }}
-                            source={{ uri: item.file }}
-                        />
-                    </ImageZoom>
-                     :
-                    item.type === 'video' ?
-                    <View style={styles.videoWrapper}>
-                        <Video
-                            ref={videoRef}
-                            source={{ uri: item.file }}
-                            style={{ 
-                                width: '100%', 
-                                height: '100%'
-                            }}
-                            rate={1}
-                            onError={e => {
-                                console.log(e);
-                            }}
-                            paused={false}
-                            muted={true}
-                            resizeMode={'contain'}
-                            repeat={true}
-                        />
-                        <Pressable
-                            onPress={() => navigation.navigate('VideoPlayer', { source: item.file })}
-                            style={styles.itemCTAWrapper}
+
+                        <ImageZoom
+                            cropWidth={Dimensions.get('window').width * .8}
+                            cropHeight={Dimensions.get('window').height}
+                            imageWidth={width * .8}
+                            imageHeight={height * .8}
                         >
                             <Image
-                                style={{ width: 28, height: 28 }}
-                                source={require('../../../assets/icons/play.png')}
+                                style={{ width: '100%', height: '80%', resizeMode: 'contain', flex: 1 }}
+                                source={{ uri: item.file }}
                             />
-                            <Text style={styles.itemCTA}>Reproducirajte videozapis</Text>
-                        </Pressable>
-                    </View> :
-                    item.type === 'document' ?
-                    <View style={styles.videoWrapper}>
-                        <Pdf
-                            source={{ uri: item.file }}
-                            style={{ 
-                                width, 
-                                height: height * .8,
-                            }}
-                        />
-                        <Pressable
-                            onPress={() => navigation.navigate('PDFViewer', { source: item.file })}
-                            style={styles.itemCTAWrapper}
-                        >
-                            <Image
-                                style={{ width: 24, height: 24 }}
-                                source={require('../../../assets/icons/document-cta.png')}
-                            />
-                            <Text style={styles.itemCTA}>Otvorite dokument</Text>
-                        </Pressable>
-                    </View>
-                    :
-                    <Image
-                        style={{ width: '80%', height: '80%', resizeMode: 'contain', flex: 1 }}
-                        source={require('../../../assets/icons/invalid_banner.png')}
-                    />
+                        </ImageZoom>
+
+
+                        :
+                        item.type === 'video' ?
+                            <View style={styles.videoWrapper}>
+                                <Video
+                                    ref={videoRef}
+                                    source={{ uri: item.file }}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%'
+                                    }}
+                                    rate={1}
+                                    onError={e => {
+                                        console.log(e);
+                                    }}
+                                    paused={false}
+                                    muted={true}
+                                    resizeMode={'contain'}
+                                    repeat={true}
+                                />
+                                <Pressable
+                                    onPress={() => navigation.navigate('VideoPlayer', { source: item.file })}
+                                    style={styles.itemCTAWrapper}
+                                >
+                                    <Image
+                                        style={{ width: 28, height: 28 }}
+                                        source={require('../../../assets/icons/play.png')}
+                                    />
+                                    <Text style={styles.itemCTA}>Reproducirajte videozapis</Text>
+                                </Pressable>
+                            </View> :
+                            item.type === 'document' ?
+                                <View style={styles.videoWrapper}>
+                                    <Pdf
+                                        source={{ uri: item.file }}
+                                        style={{
+                                            width,
+                                            height: height * .8,
+                                        }}
+                                    />
+                                    <Pressable
+                                        onPress={() => navigation.navigate('PDFViewer', { source: item.file })}
+                                        style={styles.itemCTAWrapper}
+                                    >
+                                        <Image
+                                            style={{ width: 24, height: 24 }}
+                                            source={require('../../../assets/icons/document-cta.png')}
+                                        />
+                                        <Text style={styles.itemCTA}>Otvorite dokument</Text>
+                                    </Pressable>
+                                </View>
+                                :
+                                <Image
+                                    style={{ width: '80%', height: '80%', resizeMode: 'contain', flex: 1 }}
+                                    source={require('../../../assets/icons/invalid_banner.png')}
+                                />
                 }
             </View>
         );
@@ -157,16 +171,21 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
 
     return (
         <>
-            <StatusBar hidden backgroundColor="#FFFFFF" barStyle="dark-content"/>
+            <StatusBar hidden backgroundColor="#FFFFFF" barStyle="dark-content" />
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: orientation === 'landscape' ? "#00000000" : "#00000080" }]}>
-                <View style={styles.headerFlex}>
-                    {/* Icon */}
-                    { metaIcon[_type] }
-                    <Text style={styles.fileName}>{ currentFile.name }</Text>
-                </View>
-                { orientation !== 'landscape' && <Text style={styles.count}>{ `${currentIndex + 1} / ${data.length}` }</Text> }
-            </View>
+            {
+                !active ?
+                    <View style={[styles.header, { backgroundColor: orientation === 'landscape' ? "#00000000" : "#00000080" }]}>
+                        <View style={styles.headerFlex}>
+                            {/* Icon */}
+                            {metaIcon[_type]}
+                            <Text style={styles.fileName}>{currentFile.name}</Text>
+                        </View>
+                        {orientation !== 'landscape' && <Text style={styles.count}>{`${currentIndex + 1} / ${data.length}`}</Text>}
+                    </View>
+                    : null
+            }
+
             {/* Video player */}
             <View style={[styles.container]}>
                 {/* Carousel */}
@@ -182,12 +201,12 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
                 />
 
                 {/* Controls */}
-                { orientation !== 'landscape' && 
+                {orientation !== 'landscape' &&
                     <View style={styles.controls}>
-                        <Pressable 
+                        <Pressable
                             style={{ opacity: currentIndex === 0 ? .25 : 1 }}
                             disabled={currentIndex === 0}
-                            hitSlop={40} 
+                            hitSlop={40}
                             onPress={() => ref.current.snapToPrev({ animated: true, fireCallback: true })}
                         >
                             <Image source={require('../../../assets/icons/previous.png')} style={styles.controlIcon} />
@@ -196,7 +215,7 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
                         <Pressable
                             style={{ opacity: currentIndex === data.length - 1 ? .25 : 1 }}
                             disabled={currentIndex === data.length - 1}
-                            hitSlop={40} 
+                            hitSlop={40}
                             onPress={() => ref.current.snapToNext({ animated: true, fireCallback: true })}
                         >
                             <Image source={require('../../../assets/icons/next.png')} style={styles.controlIcon} />
@@ -205,7 +224,7 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
                 }
 
                 {/* Loading */}
-                <View 
+                <View
                     style={{
                         width: '12%',
                         height: '100%',
@@ -216,9 +235,18 @@ const FilesModal: React.FC<IProps> = ({ route, navigation }) => {
                         justifyContent: 'center'
                     }}
                 >
-                    { loading && <ActivityIndicator size="large" /> }
+                    {loading && <ActivityIndicator size="large" />}
                 </View>
+
             </View>
+            {
+                active ?
+                    <View style={{ position: 'absolute', zIndex: 1, backgroundColor: '#000000', height: Dimensions.get('screen').height, width: Dimensions.get('screen').width }} >
+
+                    </View>
+                    : null
+            }
+
         </>
     )
 };
@@ -230,7 +258,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: "#000",
     },
-    header:{
+    header: {
         width: Dimensions.get('screen').width,
         paddingHorizontal: 20,
         height: 64,
@@ -238,58 +266,58 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 0,
         backgroundColor: "#00000080",
-        flexDirection: 'row', 
-        alignItems: 'center', 
+        flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between'
     },
-    headerFlex:{
-        flexDirection: 'row', 
-        alignItems: 'center', 
+    headerFlex: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    icon:{
+    icon: {
         width: 20,
         height: 20
     },
-    controlIcon:{
+    controlIcon: {
         width: 28,
         height: 28
     },
-    fileName:{
+    fileName: {
         color: '#fff',
         fontFamily: "Poppins-SemiBold",
         paddingTop: 2,
         marginLeft: 10
     },
-    count:{
+    count: {
         color: '#fff',
         fontFamily: "Poppins-SemiBold",
         paddingTop: 2
     },
     controls: {
-        position: 'absolute', 
-        width: Dimensions.get('screen').width, 
+        position: 'absolute',
+        width: Dimensions.get('screen').width,
         height: 80,
         paddingHorizontal: 20,
-        bottom: 0, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
+        bottom: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: "#00000080",
         zIndex: 100,
         justifyContent: 'space-between'
     },
-    videoWrapper:{
+    videoWrapper: {
         width: '100%',
         height: '80%',
         alignItems: 'center'
     },
-    itemCTA:{
-        color: '#fff', 
-        padding: 12, 
+    itemCTA: {
+        color: '#fff',
+        padding: 12,
         textAlign: 'center',
         fontFamily: 'Poppins-Regular',
         paddingTop: 15
     },
-    itemCTAWrapper:{
+    itemCTAWrapper: {
         position: 'absolute',
         bottom: 40,
         minWidth: Dimensions.get('screen').width * .70,
